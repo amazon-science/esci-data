@@ -43,7 +43,7 @@ For `us` locacale we fine-tuned [MS MARCO Cross-Encoders](https://huggingface.co
 
 
 ```bash
-cd classification_identification/
+cd ranking/
 ./launch-experiments-task1.sh
 ./launch-predictions-task1.sh
 ```
