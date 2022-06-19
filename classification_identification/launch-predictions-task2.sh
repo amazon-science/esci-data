@@ -45,7 +45,6 @@ python build_input_data_model.py \
     ${DICT_PRODUCTS_PATH_FILE} \
     ${DICT_QUERIES_PATH_FILE} \
     ${TEST_PUBLIC_PATH_FILE} \
-    ${TRAIN_PATH_FILE} \
     ${ARRAY_QUERIES_PATH_FILE} \
     ${ARRAY_PRODUCTS_PATH_FILE} \
     --bert_size ${BERT_SIZE}
