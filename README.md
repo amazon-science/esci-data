@@ -81,6 +81,19 @@ The following table shows the baseline results obtained through the different pu
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 
+## Cite
+
+Please cite our paper if you use this dataset for your own research:
+
+```BibTeX
+@article{reddy2022shopping,
+title={Shopping Queries Dataset: A Large-Scale {ESCI} Benchmark for Improving Product Search},
+author={Chandan K. Reddy and Lluís Màrquez and Fran Valero and Nikhil Rao and Hugo Zaragoza and Sambaran Bandyopadhyay and Arnab Biswas and Anlu Xing and Karthik Subbian},
+year={2022},
+eprint={2206.06588},
+archivePrefix={arXiv}
+}
+```
 ## License
 
 This project is licensed under the Apache-2.0 License.
