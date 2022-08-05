@@ -21,8 +21,8 @@ BERT_SIZE=768
 LABELS_TYPE="esci_labels"
 
 SQD_PATH="../shopping_queries_dataset/"
-
 DATA_REPRESENTATIONS_PATH="./text_representations/task2"
+
 DICT_PRODUCTS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_product_test.npy"
 DICT_QUERIES_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_examples_test.npy"
 
@@ -46,7 +46,6 @@ python build_input_data_model.py \
     "test" \
     ${DICT_PRODUCTS_PATH_FILE} \
     ${DICT_QUERIES_PATH_FILE} \
-    ${TEST_PUBLIC_PATH_FILE} \
     ${ARRAY_QUERIES_PATH_FILE} \
     ${ARRAY_PRODUCTS_PATH_FILE} \
     --bert_size ${BERT_SIZE}

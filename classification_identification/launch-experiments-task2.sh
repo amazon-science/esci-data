@@ -22,6 +22,7 @@ BERT_SIZE=768
 LABELS_TYPE="esci_labels"
 
 SQD_PATH="../shopping_queries_dataset/"
+DATA_REPRESENTATIONS_PATH="./text_representations/task2"
 DICT_PRODUCTS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_products_train.npy"
 DICT_QUERIES_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_examples_train.npy"
 
