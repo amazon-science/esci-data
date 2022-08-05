@@ -21,6 +21,7 @@ from transformers import BertModel, BertTokenizer
 from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 import numpy as np
+import os
 import pandas as pd
 
 def generate_dataset(X, tokenizer, pad_to_max_length=True, add_special_tokens=True, max_length=256, return_attention_mask=True, return_tensors='pt'):
@@ -66,16 +67,7 @@ def inference(model, dataloader, list_ids, device="cuda:0"):
         i = i + batch_size
     return d
 
-def compute_bert_representations(input_file, output_file, col_id, col_text, tokenizer, model, max_length=256, batch_size=128, device="cuda:0"):
-    df = pd.read_csv(input_file)
-    df.fillna('', inplace=True)
-    if col_id not in df:
-        df[col_id] = df[col_text].to_list()
-    df = df[[
-        col_id,
-        col_text,
-    ]]
-    df = df.drop_duplicates(subset=[col_id],  keep='first')
+def compute_bert_representations(df, output_file, col_id, col_text, tokenizer, model, max_length=256, batch_size=128, device="cuda:0"):    
     dataset = generate_dataset(
         df[col_text].to_list(),
         tokenizer, 
@@ -95,13 +87,14 @@ def compute_bert_representations(input_file, output_file, col_id, col_text, toke
 def main():
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_queries_path_file", type=str, default=None, help="Input CSV with the query information.")
+    parser.add_argument("dataset_path", type=str, help="Directory where the dataset is stored.")
+    parser.add_argument("split", type=str, choices=['train', 'test'], help="Split of the dataset.")
     parser.add_argument("--output_queries_path_file", type=str, default=None, help="Output file with the mapping of the queries to BERT representations.")
-    parser.add_argument("--input_product_catalogue_path_file", type=str, default=None, help="Input CSV with the product information.")
     parser.add_argument("--output_product_catalogue_path_file", type=str, default=None, help="Output file with the mapping of the queries to BERT representations.")
     parser.add_argument("--model_name", type=str, default="bert-base-multilingual-uncased", help="BERT multilingual model name.")
     parser.add_argument("--bert_max_length", type=int, default=256, help="Tokens consumed by BERT (512 tokens max).")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size.")
+    
     args = parser.parse_args()
 
     """ 1. Load models"""
@@ -109,37 +102,56 @@ def main():
     tokenizer = BertTokenizer.from_pretrained(args.model_name)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    """ 2. Encode products"""
+    """ 2. Load data """
+    col_query = "query"
+    col_query_id = "query_id"
     col_product_id = "product_id" 
     col_product_title = "product_title"
-    if args.input_product_catalogue_path_file and args.output_product_catalogue_path_file:
-        compute_bert_representations(
-            args.input_product_catalogue_path_file, 
-            args.output_product_catalogue_path_file, 
-            col_product_id, 
-            col_product_title, 
-            tokenizer, 
-            model, 
-            max_length=args.bert_max_length, 
-            batch_size=args.batch_size,
-            device=device,
-        )
+    col_product_locale = "product_locale"
+    col_large_version = "large_version"
+    col_split = "split"
+
+    df_examples = pd.read_parquet(os.path.join(args.dataset_path, 'shopping_queries_dataset_examples.parquet'))
+    df_products = pd.read_parquet(os.path.join(args.dataset_path, 'shopping_queries_dataset_products.parquet'))
+    df_examples_products = pd.merge(
+        df_examples,
+        df_products,
+        how='left',
+        left_on=[col_product_locale, col_product_id],
+        right_on=[col_product_locale, col_product_id]
+    )
+    df_examples_products = df_examples_products[df_examples_products[col_large_version] == 1]
+    df_examples_products = df_examples_products[df_examples_products[col_split] == args.split]
+
+    """ 3. Encode products"""
+    df_products = df_examples_products[[col_product_id, col_product_title]]
+    df_products = df_products.drop_duplicates(subset=[col_product_id, col_product_title])
+    compute_bert_representations(
+        df_products,
+        args.output_product_catalogue_path_file, 
+        col_product_id, 
+        col_product_title, 
+        tokenizer, 
+        model, 
+        max_length=args.bert_max_length, 
+        batch_size=args.batch_size,
+        device=device,
+    )
     
-    """ 3. Encode queries """
-    col_query_id = "query_id"
-    col_query = "query"
-    if args.input_queries_path_file and args.output_queries_path_file:
-        compute_bert_representations(
-            args.input_queries_path_file, 
-            args.output_queries_path_file, 
-            col_query_id, 
-            col_query, 
-            tokenizer, 
-            model, 
-            max_length=args.bert_max_length, 
-            batch_size=args.batch_size,
-            device=device,
-        )
+    """ 4. Encode queries """
+    df_examples = df_examples_products[[col_query_id, col_query]]
+    df_examples = df_examples.drop_duplicates(subset=[col_query_id, col_query])
+    compute_bert_representations(
+        df_examples, 
+        args.output_queries_path_file, 
+        col_query_id, 
+        col_query, 
+        tokenizer, 
+        model, 
+        max_length=args.bert_max_length, 
+        batch_size=args.batch_size,
+        device=device,
+    )
 
 
 if __name__ == "__main__": 

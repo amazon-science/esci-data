@@ -21,24 +21,20 @@ BERT_MAX_LENGTH=256
 BERT_SIZE=768
 LABELS_TYPE="esci_labels"
 
-DATA_TASK2_PATH="../data/task2"
-PRODUCT_CATALOGUE_PATH_FILE="${DATA_TASK2_PATH}/product_catalogue-v0.2.csv.zip"
-TRAIN_PATH_FILE="${DATA_TASK2_PATH}/train-v0.2.csv.zip"
+SQD_PATH="../shopping_queries_dataset/"
+DICT_PRODUCTS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_products_train.npy"
+DICT_QUERIES_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_examples_train.npy"
 
-DATA_REPRESENTATIONS_PATH="./text_representations/task2"
-DICT_PRODUCTS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_product_catalogue-v0.2.npy"
-DICT_QUERIES_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_train-v0.2.npy"
-
-ARRAY_PRODUCTS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_product_train-v0.2.npy"
-ARRAY_QUERIES_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_queries_train-v0.2.npy"
-ARRAY_LABELS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_labels_train-v0.2.npy"
+ARRAY_PRODUCTS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_products_train.npy"
+ARRAY_QUERIES_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_queries_train.npy"
+ARRAY_LABELS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_labels_train.npy"
 
 # 1. Get BERT representations for queries and products
 mkdir -p ${DATA_REPRESENTATIONS_PATH}
 python compute_bert_representations.py \
-    --input_queries_path_file ${TRAIN_PATH_FILE} \
+    ${SQD_PATH} \
+    "train" \
     --output_queries_path_file ${DICT_QUERIES_PATH_FILE} \
-    --input_product_catalogue_path_file ${PRODUCT_CATALOGUE_PATH_FILE} \
     --output_product_catalogue_path_file ${DICT_PRODUCTS_PATH_FILE} \
     --model_name ${BERT_MODEL_NAME} \
     --bert_max_length ${BERT_MAX_LENGTH} \
@@ -46,9 +42,10 @@ python compute_bert_representations.py \
 
 # 2. Build inputs dataset from BERT representations
 python build_input_data_model.py \
+    ${SQD_PATH} \
+    "train" \
     ${DICT_PRODUCTS_PATH_FILE} \
     ${DICT_QUERIES_PATH_FILE} \
-    ${TRAIN_PATH_FILE} \
     ${ARRAY_QUERIES_PATH_FILE} \
     ${ARRAY_PRODUCTS_PATH_FILE} \
     --output_labels_path_file ${ARRAY_LABELS_PATH_FILE} \
