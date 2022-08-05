@@ -14,6 +14,7 @@
 
 import argparse
 import numpy as np
+import os
 import pandas as pd
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoModel
@@ -23,8 +24,7 @@ from tqdm import tqdm
 def main():
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("test_path_file", type=str, help="Input test CSV with the pairs of queries and products.")
-    parser.add_argument("product_catalogue_path_file", type=str, help="Input product catalogue CSV.")
+    parser.add_argument("dataset_path", type=str, help="Directory where the dataset is stored.")
     parser.add_argument("locale", type=str, choices=['us', 'es', 'jp'], help="Locale of the queries.")
     parser.add_argument("model_path", type=str, help="Directory where the model is stored.")
     parser.add_argument("hypothesis_path_file", type=str, help="Output CSV with the hypothesis.")
@@ -32,31 +32,36 @@ def main():
     args = parser.parse_args()
 
     """ 0. Init variables """
-    col_query_id = "query_id"
     col_query = "query"
-    col_query_locale = "query_locale"
+    col_query_id = "query_id"
     col_product_id = "product_id" 
     col_product_title = "product_title"
     col_product_locale = "product_locale"
+    col_small_version = "small_version"
+    col_split = "split"
+    col_scores = "scores"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     """ 1. Load data """    
-    df = pd.read_csv(args.test_path_file)
-    df_product_catalogue = pd.read_csv(args.product_catalogue_path_file)
-    df_product_catalogue.fillna('', inplace=True)
-    df = df[df[col_query_locale] == args.locale]
-    df_product_catalogue = df_product_catalogue[df_product_catalogue[col_product_locale] == args.locale]
-    df = pd.merge(
-        df, 
-        df_product_catalogue,  
-        how='left', 
-        left_on=[col_product_id, col_query_locale], 
-        right_on = [col_product_id, col_product_locale],
+    df_examples = pd.read_parquet(os.path.join(args.dataset_path, 'shopping_queries_dataset_examples.parquet'))
+    df_products = pd.read_parquet(os.path.join(args.dataset_path, 'shopping_queries_dataset_products.parquet'))
+
+    df_examples_products = pd.merge(
+        df_examples,
+        df_products,
+        how='left',
+        left_on=[col_product_locale, col_product_id],
+        right_on=[col_product_locale, col_product_id]
     )
-    features_query = df[col_query].to_list()
-    features_product = df[col_product_title].to_list()
+    df_examples_products = df_examples_products[df_examples_products[col_small_version] == 1]
+    df_examples_products = df_examples_products[df_examples_products[col_split] == "test"]
+    df_examples_products = df_examples_products[df_examples_products[col_product_locale] == args.locale]
+    
+    features_query = df_examples_products[col_query].to_list()
+    features_product = df_examples_products[col_product_title].to_list()
     n_examples = len(features_query)
     scores = np.zeros(n_examples)
+
     if args.locale == "us":
         """ 2. Prepare Cross-encoder model """
         model = AutoModelForSequenceClassification.from_pretrained(args.model_path).to(device)
@@ -103,10 +108,9 @@ def main():
                 i = j
     
     """ 4. Prepare hypothesis file """   
-    col_scores = "scores"
     df_hypothesis = pd.DataFrame({
-        col_query_id : df[col_query_id].to_list(),
-        col_product_id : df[col_product_id].to_list(),
+        col_query_id : df_examples_products[col_query_id].to_list(),
+        col_product_id : df_examples_products[col_product_id].to_list(),
         col_scores : scores,
     })
     df_hypothesis = df_hypothesis.sort_values(by=[col_query_id, col_scores], ascending=False)
