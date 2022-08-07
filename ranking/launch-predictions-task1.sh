@@ -51,4 +51,4 @@ python prepare_trec_eval_files.py ${DATA_SQD} \
     ${HYPOTHESIS_TASK1_PATH} \
     --output_path ${TREC_EVAL_DATA_PATH}
 
-$1/terrier trec_eval "${TREC_EVAL_DATA_PATH}/hypothesis.results" "${TREC_EVAL_DATA_PATH}/test.qrels" -c -J -m 'ndcg.1=0,2=0.01,3=0.1,4=1'
+$1/terrier trec_eval "${TREC_EVAL_DATA_PATH}/test.qrels" "${TREC_EVAL_DATA_PATH}/hypothesis.results" -c -J -m 'ndcg.1=0,2=0.01,3=0.1,4=1'
