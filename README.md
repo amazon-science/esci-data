@@ -171,7 +171,7 @@ The following table shows the baseline results obtained through the different pu
 
 | Task |  MetricS  | ScoreS |
 |:----:|:--------:|:-----:|
-|    1 | nDCG     | TK |
+|    1 | nDCG     | 0.83 |
 |    2 | Macro F1, Micro F1 | TK, TK |
 |    3 | Macro F1, Micro F1 | TK, TK |
 
