@@ -169,7 +169,7 @@ cd classification_identification/
 ### Results
 The following table shows the baseline results obtained through the different public tests of the three tasks.
 
-| Task |  MetricS  | ScoreS |
+| Task |  Metrics  | Scores |
 |:----:|:--------:|:-----:|
 |    1 | nDCG     | 0.83 |
 |    2 | Macro F1, Micro F1 | TK, TK |
