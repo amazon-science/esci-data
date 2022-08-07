@@ -50,7 +50,7 @@ A summary of our Shopping Queries Data Set is given in the two tables below show
 
 ## Usage
 
-The dataset has the following files:
+The [dataset](https://github.com/amazon-research/esci-code/tree/main/shopping_queries_dataset) has the following files:
 - `shopping_queries_dataset_examples.parquet` contains the following columns : `example_id`, `query`, `query_id`, `product_id`, `product_locale`, `esci_label`, `small_version`, `large_version`, `split`
 - `shopping_queries_dataset_products.parquet` contains the following columns : `product_id`, `product_title`, `product_description`, `product_bullet_point`, `product_brand`, `product_color`, `product_locale`
 - `shopping_queries_dataset_sources.csv` contains the following columns : `query_id`, `source`
@@ -118,7 +118,6 @@ We launched the baselines experiments creating an environment with Python 3.6 an
 ```
 numpy==1.19.2
 pandas==1.1.5
-torch==1.7.1
 transformers==4.16.2
 scikit-learn==0.24.1
 sentence-transformers==2.1.0
@@ -139,11 +138,12 @@ For task 1, we fine-tuned 3 models one for each `query_locale`.
 
 For `us` locacale we fine-tuned [MS MARCO Cross-Encoders](https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-12-v2). For `es` and `jp` locales [multilingual MPNet](https://huggingface.co/sentence-transformers/all-mpnet-base-v1). We used the query and title of the product as input for these models.
 
+To get the nDCG score of the ranking models is needed the `terrier` source code (download version 5.5 [here](http://terrier.org/download/))
 
 ```bash
 cd ranking/
 ./launch-experiments-task1.sh
-./launch-predictions-task1.sh
+./launch-predictions-task1.sh $TERRIER_PATH
 ```
 
 #### Task 2 - Multiclass Product Classification
