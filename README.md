@@ -132,7 +132,7 @@ pip install -r requirements.txt
 
 For a task **K**, we provide the same scripts, one for training the model (and preprocessing the data for tasks 2 and 3): `launch-experiments-taskK.sh`; and a second script for getting the predictions for the public test set using the model trained on the previous step: `launch-predictions-taskK.sh`.
 
-### Task 1 - Query Product Ranking
+#### Task 1 - Query Product Ranking
 
 For task 1, we fine-tuned 3 models one for each `product_locale`.
 
