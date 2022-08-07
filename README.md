@@ -134,7 +134,7 @@ For a task **K**, we provide the same scripts, one for training the model (and p
 
 ### Task 1 - Query Product Ranking
 
-For task 1, we fine-tuned 3 models one for each `query_locale`.
+For task 1, we fine-tuned 3 models one for each `product_locale`.
 
 For `us` locacale we fine-tuned [MS MARCO Cross-Encoders](https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-12-v2). For `es` and `jp` locales [multilingual MPNet](https://huggingface.co/sentence-transformers/all-mpnet-base-v1). We used the query and title of the product as input for these models.
 
