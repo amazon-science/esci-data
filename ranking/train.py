@@ -17,6 +17,7 @@ from sentence_transformers.cross_encoder import CrossEncoder
 from sentence_transformers.cross_encoder.evaluation import CERerankingEvaluator
 from sentence_transformers import SentenceTransformer, InputExample, losses
 from sentence_transformers import evaluation
+import os
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
@@ -26,8 +27,7 @@ from sklearn.model_selection import train_test_split
 def main():
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("train_path_file", type=str, help="Input training CSV with the pairs of queries and products.")
-    parser.add_argument("product_catalogue_path_file", type=str, help="Input product catalogue CSV.")
+    parser.add_argument("dataset_path", type=str, help="Directory where the dataset is stored.")
     parser.add_argument("locale", type=str, choices=['us', 'es', 'jp'], help="Locale of the queries.")
     parser.add_argument("model_save_path", type=str, help="Directory to save the model.")
     parser.add_argument("--random_state", type=int, default=42, help="Random seed.")
@@ -36,42 +36,45 @@ def main():
     args = parser.parse_args()
 
     """ 0. Init variables """
-    col_query_id = "query_id"
     col_query = "query"
-    col_query_locale = "query_locale"
-    col_esci_label = "esci_label"
+    col_query_id = "query_id"
     col_product_id = "product_id" 
     col_product_title = "product_title"
     col_product_locale = "product_locale"
-    esci_label2gain = {
-        'exact' : 1.0,
-        'substitute' : 0.1,
-        'complement' : 0.01,
-        'irrelevant' : 0.0,
-    }
+    col_esci_label = "esci_label" 
+    col_small_version = "small_version"
+    col_split = "split"
     col_gain = 'gain'
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+    esci_label2gain = {
+        'E' : 1.0,
+        'S' : 0.1,
+        'C' : 0.01,
+        'I' : 0.0,
+    }
+    
     """ 1. Load data """    
-    df = pd.read_csv(args.train_path_file)
-    df_product_catalogue = pd.read_csv(args.product_catalogue_path_file)
-    df = df[df[col_query_locale] == args.locale]
-    df_product_catalogue = df_product_catalogue[df_product_catalogue[col_product_locale] == args.locale]
-    df = pd.merge(
-        df, 
-        df_product_catalogue,  
-        how='left', 
-        left_on=[col_product_id, col_query_locale], 
-        right_on = [col_product_id, col_product_locale],
+    df_examples = pd.read_parquet(os.path.join(args.dataset_path, 'shopping_queries_dataset_examples.parquet'))
+    df_products = pd.read_parquet(os.path.join(args.dataset_path, 'shopping_queries_dataset_products.parquet'))
+    df_examples_products = pd.merge(
+        df_examples,
+        df_products,
+        how='left',
+        left_on=[col_product_locale, col_product_id],
+        right_on=[col_product_locale, col_product_id]
     )
-    df = df[df[col_product_title].notna()]
-    list_query_id = df[col_query_id].unique()
+    df_examples_products = df_examples_products[df_examples_products[col_small_version] == 1]
+    df_examples_products = df_examples_products[df_examples_products[col_split] == "train"]
+    df_examples_products = df_examples_products[df_examples_products[col_product_locale] == args.locale]
+    df_examples_products[col_gain] = df_examples_products[col_esci_label].apply(lambda esci_label: esci_label2gain[esci_label])
+
+    list_query_id = df_examples_products[col_query_id].unique()
     dev_size = args.n_dev_queries / len(list_query_id)
     list_query_id_train, list_query_id_dev = train_test_split(list_query_id, test_size=dev_size, random_state=args.random_state)
-    df[col_gain] = df[col_esci_label].apply(lambda label: esci_label2gain[label])
-    df = df[[col_query_id, col_query, col_product_title, col_gain]]
-    df_train = df[df[col_query_id].isin(list_query_id_train)]
-    df_dev = df[df[col_query_id].isin(list_query_id_dev)]
+    
+    df_examples_products = df_examples_products[[col_query_id, col_query, col_product_title, col_gain]]
+    df_train = df_examples_products[df_examples_products[col_query_id].isin(list_query_id_train)]
+    df_dev = df_examples_products[df_examples_products[col_query_id].isin(list_query_id_dev)]
     
     """ 2. Prepare data loaders """
     train_samples = []

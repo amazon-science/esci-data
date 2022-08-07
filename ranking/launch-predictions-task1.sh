@@ -14,15 +14,22 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+if [ "$#" -ne 1 ]; then
+    echo './launch-predictions-task1.sh ${BIN_TERRIER_CORE_PATH}'
+    printf "Example: ./launch-predictions-task1.sh /tmp/terrier-project-5.5/bin/terrier\n"
+    printf "Read https://github.com/terrier-org/terrier-core for more details\n"
+    exit
+fi
+
 LOCALES=("us")
 LOCALES+=("es")
 LOCALES+=("jp")
 
-DATA_TASK1_PATH="../data/task1/"
-PRODUCT_CATALOGUE_PATH_FILE="${DATA_TASK1_PATH}/product_catalogue-v0.2.csv.zip"
-TEST_PATH_FILE="${DATA_TASK1_PATH}/test_public-v0.2.csv.zip"
+DATA_SQD="../shopping_queries_dataset/"
 MODELS_TASK1_PATH="./models"
 HYPOTHESIS_TASK1_PATH="./hypothesis"
+TREC_EVAL_DATA_PATH="./trec_eval_data"
+
 mkdir -p ${HYPOTHESIS_TASK1_PATH}
 
 for i in "${!LOCALES[@]}"
@@ -32,12 +39,16 @@ do
     MODEL_PATH="${MODELS_TASK1_PATH}/task_1_ranking_model_${LOCALE}"
     HYPOTHESIS_PATH_FILE="${HYPOTHESIS_TASK1_PATH}/task_1_ranking_model_${LOCALE}.csv"
     python inference.py \
-        ${TEST_PATH_FILE} \
-        ${PRODUCT_CATALOGUE_PATH_FILE} \
+        ${DATA_SQD} \
         ${LOCALE} \
         ${MODEL_PATH} \
         ${HYPOTHESIS_PATH_FILE}
 done
 
-# Combine predictions from three locales into one file: us + es + jp
-python concat_predictions.py ${HYPOTHESIS_TASK1_PATH}
+# Compute nDCG score (terrier trec_eval path is needed)[see https://github.com/terrier-org/terrier-core]
+mkdir -p ${TREC_EVAL_DATA_PATH}
+python prepare_trec_eval_files.py ${DATA_SQD} \
+    ${HYPOTHESIS_TASK1_PATH} \
+    --output_path ${TREC_EVAL_DATA_PATH}
+
+$1/terrier trec_eval "${TREC_EVAL_DATA_PATH}/test.qrels" "${TREC_EVAL_DATA_PATH}/hypothesis.results" -c -J -m 'ndcg.1=0,2=0.01,3=0.1,4=1'

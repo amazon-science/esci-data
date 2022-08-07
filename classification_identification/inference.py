@@ -15,6 +15,7 @@
 import argparse
 import numpy as np
 import torch
+from sklearn.metrics import f1_score
 from query_product import QueryProductClassifier, generate_dataset
 import os
 from tqdm import tqdm
@@ -24,9 +25,10 @@ import pandas as pd
 def main():
     
     parser = argparse.ArgumentParser()
+    parser.add_argument("dataset_path", type=str, help="Directory where the dataset is stored.")
+    parser.add_argument("split", type=str, choices=['train', 'test'], help="Split of the dataset.")
     parser.add_argument("test_queries_path_file", type=str, help="Input array file with the BERT representations of the queries.")
     parser.add_argument("test_products_path_file", type=str, help="Input array file with the BERT representations of the products.")
-    parser.add_argument("test_path_file", type=str, help="Input CSV with the pairs of queries and products.")
     parser.add_argument("model_path", type=str, help="Directory where the model is stored.")
     parser.add_argument("task", type=str, choices=["esci_labels", "substitute_identification"], help="Task: esci_labels | substitute_identification.")
     parser.add_argument("hypothesis_path_file", type=str, help="Output CSV with the hypothesis.")
@@ -50,6 +52,10 @@ def main():
         "substitute_identification" : (2, class_id2substitute_identification, "substitute_label"),
     }
     col_example_id = "example_id"
+    col_gold_label = "gold_label"
+    col_large_version = "large_version"
+    col_split = "split"
+    col_esci_label = "esci_label"
 
     """ 1. Load data """
     query_array = np.load(args.test_queries_path_file)
@@ -94,18 +100,41 @@ def main():
     a_hypothesis = a_hypothesis.astype(int)
 
     """ 4. Prepare hypothesis file """
-    df = pd.read_csv(args.test_path_file)
+    df = pd.read_parquet(os.path.join(args.dataset_path, 'shopping_queries_dataset_examples.parquet'))
+    df = df[df[col_large_version] == 1]
+    df = df[df[col_split] == args.split]
     labels = [ class_id2label[int(hyp)] for hyp in a_hypothesis ]
+    if args.task == "substitute_identification":
+        tmp_dict = {
+            'E' : 'no_substitute',
+            'S' : 'substitute',
+            'C' : 'no_substitute',
+            'I' : 'no_substitute',
+        }
+        df[col_esci_label] = df[col_esci_label].apply(lambda esci_label: tmp_dict[esci_label])
     df_hypothesis = pd.DataFrame({
         col_example_id : df[col_example_id].to_list(),
         col_label : labels,
+        col_gold_label : df[col_esci_label].to_list()
     })
     df_hypothesis[[col_example_id, col_label]].to_csv(
         args.hypothesis_path_file,
         index=False,
         sep=',',
     )
+    macro_f1 = f1_score(
+        df_hypothesis[col_gold_label], 
+        df_hypothesis[col_label], 
+        average='macro',
+    )
+    micro_f1 = f1_score(
+        df_hypothesis[col_gold_label], 
+        df_hypothesis[col_label], 
+        average='micro',
+        )
+    print("macro\tmicro")
+    print(f"{macro_f1:.3f}\t{micro_f1:.3f}")
 
-    
+
 if __name__ == "__main__": 
     main()  

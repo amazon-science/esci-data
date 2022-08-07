@@ -25,9 +25,7 @@ N_DEV_QUERIES_LOCALE+=(200)
 RANDOM_STATE=42
 TRAIN_BATCH_SIZE=32
 
-DATA_TASK1_PATH="../data/task1/"
-PRODUCT_CATALOGUE_PATH_FILE="${DATA_TASK1_PATH}/product_catalogue-v0.2.csv.zip"
-TRAIN_PATH_FILE="${DATA_TASK1_PATH}/train-v0.2.csv.zip"
+DATA_SQD="../shopping_queries_dataset/"
 MODELS_TASK1_PATH="./models"
 
 for i in "${!LOCALES[@]}"
@@ -36,8 +34,7 @@ do
     LOCALE="${LOCALES[$i]}"
     MODEL_SAVE_PATH="${MODELS_TASK1_PATH}/task_1_ranking_model_${LOCALE}"
     python train.py \
-        ${TRAIN_PATH_FILE} \
-        ${PRODUCT_CATALOGUE_PATH_FILE} \
+        ${DATA_SQD} \
         ${LOCALE} \
         ${MODEL_SAVE_PATH} \
         --random_state ${RANDOM_STATE} \

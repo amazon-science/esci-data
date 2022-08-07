@@ -20,35 +20,38 @@ BERT_MAX_LENGTH=256
 BERT_SIZE=768
 LABELS_TYPE="esci_labels"
 
-DATA_TASK2_PATH="../data/task2"
-TEST_PUBLIC_PATH_FILE="${DATA_TASK2_PATH}/test_public-v0.2.csv.zip"
-
+SQD_PATH="../shopping_queries_dataset/"
 DATA_REPRESENTATIONS_PATH="./text_representations/task2"
-DICT_PRODUCTS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_product_catalogue-v0.2.npy"
-DICT_QUERIES_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_test_public-v0.2.npy"
 
-ARRAY_PRODUCTS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_product_test_public-v0.2.npy"
-ARRAY_QUERIES_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_queries_test_public-v0.2.npy"
+DICT_PRODUCTS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_product_test.npy"
+DICT_QUERIES_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_examples_test.npy"
 
+ARRAY_PRODUCTS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_product_test.npy"
+ARRAY_QUERIES_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_queries_test.npy"
+ARRAY_LABELS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_labels_test.npy"
 mkdir -p ${DATA_REPRESENTATIONS_PATH}
 
 # 1. Get BERT representations for queries and products
 python compute_bert_representations.py \
-    --input_queries_path_file ${TEST_PUBLIC_PATH_FILE} \
+    ${SQD_PATH} \
+    "test" \
     --output_queries_path_file ${DICT_QUERIES_PATH_FILE} \
+    --output_product_catalogue_path_file ${DICT_PRODUCTS_PATH_FILE} \
     --model_name ${BERT_MODEL_NAME} \
     --bert_max_length ${BERT_MAX_LENGTH} \
     --batch_size ${BATCH_SIZE}
 
 # 2. Build inputs datasets from BERT representations
 python build_input_data_model.py \
+    ${SQD_PATH} \
+    "test" \
     ${DICT_PRODUCTS_PATH_FILE} \
     ${DICT_QUERIES_PATH_FILE} \
-    ${TEST_PUBLIC_PATH_FILE} \
-    ${TRAIN_PATH_FILE} \
     ${ARRAY_QUERIES_PATH_FILE} \
     ${ARRAY_PRODUCTS_PATH_FILE} \
-    --bert_size ${BERT_SIZE}
+    ${ARRAY_LABELS_PATH_FILE} \
+    --bert_size ${BERT_SIZE} \
+    --labels_type ${LABELS_TYPE} 
 
 MODELS_PATH="./models"
 MODEL_PATH="${MODELS_PATH}/task_2_esci_classifier_model"
@@ -59,9 +62,10 @@ mkdir -p ${HYPOTHESIS_PATH}
 
 # 3. Perform the predictions
 python inference.py \
+    ${SQD_PATH} \
+    "test"  \
     ${ARRAY_QUERIES_PATH_FILE} \
     ${ARRAY_PRODUCTS_PATH_FILE} \
-    ${TEST_PUBLIC_PATH_FILE} \
     ${MODEL_PATH} \
     ${LABELS_TYPE} \
     ${HYPOTHESIS_PATH_FILE} \
