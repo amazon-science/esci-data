@@ -49,7 +49,7 @@ python build_input_data_model.py \
     ${DICT_QUERIES_PATH_FILE} \
     ${ARRAY_QUERIES_PATH_FILE} \
     ${ARRAY_PRODUCTS_PATH_FILE} \
-    --output_labels_path_file ${ARRAY_LABELS_PATH_FILE} \
+    ${ARRAY_LABELS_PATH_FILE} \
     --labels_type ${LABELS_TYPE} \
     --bert_size ${BERT_SIZE}
 

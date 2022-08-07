@@ -55,6 +55,7 @@ def main():
     col_gold_label = "gold_label"
     col_large_version = "large_version"
     col_split = "split"
+    col_esci_label = "esci_label"
 
     """ 1. Load data """
     query_array = np.load(args.test_queries_path_file)
@@ -102,12 +103,19 @@ def main():
     df = pd.read_parquet(os.path.join(args.dataset_path, 'shopping_queries_dataset_examples.parquet'))
     df = df[df[col_large_version] == 1]
     df = df[df[col_split] == args.split]
-    df = pd.read_csv(args.test_path_file)
     labels = [ class_id2label[int(hyp)] for hyp in a_hypothesis ]
+    if args.task == "substitute_identification":
+        tmp_dict = {
+            'E' : 'no_substitute',
+            'S' : 'substitute',
+            'C' : 'no_substitute',
+            'I' : 'no_substitute',
+        }
+        df[col_esci_label] = df[col_esci_label].apply(lambda esci_label: tmp_dict[esci_label])
     df_hypothesis = pd.DataFrame({
         col_example_id : df[col_example_id].to_list(),
         col_label : labels,
-        col_gold_label : df[col_gold_label].to_list()
+        col_gold_label : df[col_esci_label].to_list()
     })
     df_hypothesis[[col_example_id, col_label]].to_csv(
         args.hypothesis_path_file,

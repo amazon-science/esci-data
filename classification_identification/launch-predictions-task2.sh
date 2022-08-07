@@ -28,7 +28,7 @@ DICT_QUERIES_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/dict_examples_test.npy"
 
 ARRAY_PRODUCTS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_product_test.npy"
 ARRAY_QUERIES_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_queries_test.npy"
-
+ARRAY_LABELS_PATH_FILE="${DATA_REPRESENTATIONS_PATH}/array_labels_test.npy"
 mkdir -p ${DATA_REPRESENTATIONS_PATH}
 
 # 1. Get BERT representations for queries and products
@@ -36,6 +36,7 @@ python compute_bert_representations.py \
     ${SQD_PATH} \
     "test" \
     --output_queries_path_file ${DICT_QUERIES_PATH_FILE} \
+    --output_product_catalogue_path_file ${DICT_PRODUCTS_PATH_FILE} \
     --model_name ${BERT_MODEL_NAME} \
     --bert_max_length ${BERT_MAX_LENGTH} \
     --batch_size ${BATCH_SIZE}
@@ -48,7 +49,9 @@ python build_input_data_model.py \
     ${DICT_QUERIES_PATH_FILE} \
     ${ARRAY_QUERIES_PATH_FILE} \
     ${ARRAY_PRODUCTS_PATH_FILE} \
-    --bert_size ${BERT_SIZE}
+    ${ARRAY_LABELS_PATH_FILE} \
+    --bert_size ${BERT_SIZE} \
+    --labels_type ${LABELS_TYPE} 
 
 MODELS_PATH="./models"
 MODEL_PATH="${MODELS_PATH}/task_2_esci_classifier_model"
@@ -60,7 +63,7 @@ mkdir -p ${HYPOTHESIS_PATH}
 # 3. Perform the predictions
 python inference.py \
     ${SQD_PATH} \
-    "test" 
+    "test"  \
     ${ARRAY_QUERIES_PATH_FILE} \
     ${ARRAY_PRODUCTS_PATH_FILE} \
     ${MODEL_PATH} \

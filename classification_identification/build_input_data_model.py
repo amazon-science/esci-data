@@ -28,7 +28,7 @@ def main():
     parser.add_argument("dict_queries_path_file", type=str, help="Input file with the mapping of the queries to BERT representations.")
     parser.add_argument("output_queries_path_file", type=str, help="Output array file with the BERT representations of the queries.")
     parser.add_argument("output_products_path_file", type=str, help="Output array file with the BERT representations of the products.")
-    parser.add_argument("--output_labels_path_file", type=str, default=None, help="Output array file the labels.")
+    parser.add_argument("output_labels_path_file", type=str, default=None, help="Output array file the labels.")
     parser.add_argument("--labels_type", type=str, choices=["esci_labels", "substitute_identification"], help="Task: esci_labels | substitute_identification.")
     parser.add_argument("--bert_size", type=int, default=768, help="BERT embeddings dimension.")
     args = parser.parse_args()
@@ -39,8 +39,7 @@ def main():
     col_product_id = "product_id" 
     col_large_version = "large_version"
     col_split = "split"
-    col_esci_label = "esci_label" 
-    flag_labels = False
+    col_esci_label = "esci_label"
 
     dict_labels_type = dict()
     dict_labels_type['esci_labels'] = {
@@ -61,20 +60,13 @@ def main():
     df = df[df[col_large_version] == 1]
     df = df[df[col_split] == args.split]
     
-    if col_split == "train":
-        flag_labels = True
-        df = df[[
-            col_query_id,
-            col_product_id,
-            col_esci_label,
-        ]]
-    else:
-        df = df[[
-            col_query_id,
-            col_product_id,
-        ]]
+    df = df[[
+        col_query_id,
+        col_product_id,
+        col_esci_label,
+    ]]
     
-    if flag_labels and args.labels_type == "substitute_identification":
+    if args.labels_type == "substitute_identification":
         tmp_dict = {
             'E' : 'no_substitute',
             'S' : 'substitute',
@@ -86,22 +78,21 @@ def main():
     num_examples = len(df)
     array_queries = np.zeros((num_examples, args.bert_size))
     array_products = np.zeros((num_examples, args.bert_size))
-
+    
     """" 3. Map queries and products """
     for i in tqdm(range(num_examples)):
         array_queries[i] = dict_queries[()][df.iloc[i][col_query_id]]
         array_products[i] = dict_products[()][df.iloc[i][col_product_id]]
-    
+        
     """" 4. Export representations for queries and products """
     np.save(args.output_queries_path_file, array_queries)
     np.save(args.output_products_path_file, array_products)
 
-    if flag_labels and args.output_labels_path_file:
-        """" 5. Export labels (only for training) """
-        col_class_id = 'class_id'
-        labels2class_id = dict_labels_type[args.labels_type]
-        df[col_class_id] = df[col_label].apply(lambda label: labels2class_id[label])
-        np.save(args.output_labels_path_file, df[col_class_id].to_numpy())
+    """" 5. Export labels (only for training) """
+    col_class_id = 'class_id'
+    labels2class_id = dict_labels_type[args.labels_type]
+    df[col_class_id] = df[col_label].apply(lambda label: labels2class_id[label])
+    np.save(args.output_labels_path_file, df[col_class_id].to_numpy())
 
 
 if __name__ == "__main__": 
