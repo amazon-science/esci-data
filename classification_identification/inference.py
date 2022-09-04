@@ -38,10 +38,10 @@ def main():
 
     """ 0. Init variables """
     class_id2esci_label = {
-        0 : 'irrelevant',
-        1 : 'substitute',
-        2 : 'exact',
-        3 : 'complement',
+        0 : 'E',
+        1 : 'S',
+        2 : 'C',
+        3 : 'I',
     }
     class_id2substitute_identification = {
         0 : 'no_substitute',
